@@ -1,0 +1,36 @@
+#Assumes a Geopandas DataFrame with geometry (WKT) field 'the_geom', and vessel name 'name'
+
+def check_proximity(gdf, distance_miles=1):
+   
+    if gdf.crs is None:
+        gdf = gdf.set_crs('EPSG:4326')
+   
+   
+    gdf_projected = gdf.to_crs('EPSG:3857')
+    distance_meters = distance_miles * 1609.34
+   
+    unique_names = gdf_projected['name'].unique()
+    results = []
+   
+   
+    for i, name1 in enumerate(unique_names):
+        for j, name2 in enumerate(unique_names):
+            if i < j:  
+                geoms1 = gdf_projected[gdf_projected['name'] == name1]['the_geom']
+                geoms2 = gdf_projected[gdf_projected['name'] == name2]['the_geom']
+               
+                within_distance = False
+                for geom1 in geoms1:
+                    for geom2 in geoms2:
+                        if geom1.distance(geom2) <= distance_meters:
+                            within_distance = True
+                            break
+                    if within_distance:
+                        break
+               
+                results.append({
+                    'name1': name1,
+                    'name2': name2,
+                    'within_1_mile': within_distance
+                })
+    
